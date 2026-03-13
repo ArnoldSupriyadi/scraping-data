@@ -1,109 +1,111 @@
 import json
-import time
-import random
 import csv
+import time
 from playwright.sync_api import sync_playwright
 
 def scrape_detail_massal():
-    # 1. Buka file hasil_home.json yang berisi daftar link
+    print("Mulai menyedot detail dari produk...")
+    
+    # 1. Buka data dari file JSON hasil scraper_home
     try:
-        with open("hasil_home.json", "r", encoding="utf-8") as f:
+        with open('hasil_home.json', 'r', encoding='utf-8') as f:
             daftar_produk = json.load(f)
-    except FileNotFoundError:
-        print("File hasil_home.json tidak ditemukan!")
+    except Exception as e:
+        print(f"Gagal membaca hasil_home.json: {e}")
         return
 
-    # 2. Siapkan wadah (list) untuk format JSON
-    data_detail_json = list()
-
-    # 3. Siapkan file CSV (Format standar Facebook/Meta Ads)
-    file_csv = open("katalog_meta_ads.csv", "w", newline="", encoding="utf-8")
-    writer = csv.writer(file_csv)
-    # Header Kolom sesuai syarat mutlak Meta Ads
+    # 2. Siapkan file CSV untuk Meta Ads
+    csv_file = open('katalog_meta_ads.csv', 'w', newline='', encoding='utf-8')
+    writer = csv.writer(csv_file)
+    
+    # Header Wajib Meta Ads (Facebook/Instagram Catalog)
     writer.writerow(["id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand"])
 
+    # 3. Mulai proses Scraping dengan Playwright
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled"]
-        )
-        context = browser.new_context()
-
-        # Muat cookies agar melewati login
-        try:
-            with open("cookies.json", "r") as f:
-                context.add_cookies(json.loads(f.read()))
-        except Exception:
-            print("Peringatan: file cookies.json tidak ditemukan. Bot mungkin disuruh login.")
-
-        page = context.new_page()
+        # Gunakan parameter anti-bot
+        browser = p.chromium.launch(headless=False, args=["--disable-blink-features=AutomationControlled"])
         
-        print(f"Mulai menyedot detail dari {len(daftar_produk)} produk...\n")
+        # Suntikkan cookies agar terdeteksi sudah login
+        context = browser.new_context(storage_state="cookies.json")
+        page = context.new_page()
 
         for index, produk in enumerate(daftar_produk):
-            url = produk["link"]
-            judul = produk["judul"]
-            harga_jual = produk["rekomendasi_jual"]
+            id_produk = f"AD-{index+1}"
+            judul = produk.get("judul", "Tanpa Judul")
+            url = produk.get("link", "")
             
-            # Mengambil ID unik dari tautan (contoh: dari /1255 menjadi 1255)
-            id_produk = url.split("/")[-1]
-
-            print(f"[{index+1}/{len(daftar_produk)}] Mengunjungi: {judul}")
+            # Mengambil harga jual dari hasil home
+            harga_jual = produk.get("rekomendasi_jual", "0")
             
-            try:
-                page.goto(url)
-                # Tunggu 4 detik agar gambar dan deskripsi selesai dimuat
-                page.wait_for_timeout(4000) 
-
-                # =================================================================
-                # Mengambil teks deksripsi dan link gambar
-                # =================================================================
-                deskripsi = page.locator("div").filter(has_text="Deskripsi").first.inner_text()
-                link_gambar = page.locator("img").nth(1).get_attribute("src")
-
-            except Exception as e:
-                print("  -> (Detail gagal ditarik, menggunakan teks default)")
-                deskripsi = "Produk dropship berkualitas siap kirim."
-                link_gambar = "https://anekadropship.id/poto/anekamedia.jpeg"
-
             # Membersihkan format harga (Misal: Rp. 140.000 menjadi 140000 IDR)
-            harga_bersih = harga_jual.replace("Rp.", "").replace("Rp", "").replace(".", "").strip()
+            harga_bersih = str(harga_jual).replace("Rp.", "").replace("Rp", "").replace(".", "").strip()
             harga_meta = f"{harga_bersih} IDR"
 
+            print(f"[{index+1}/{len(daftar_produk)}] Mengunjungi: {judul}")
+
+            try:
+                page.goto(url, timeout=60000)
+                # Jeda 4 detik agar elemen gambar dan deskripsi selesai dimuat
+                page.wait_for_timeout(4000) 
+
+                # -- AMBIL DESKRIPSI UTAMA --
+                try:
+                    # Mencari class "prose" yang membungkus deskripsi produk
+                    deskripsi_utama = page.locator('.prose').inner_text().strip()
+                except:
+                    deskripsi_utama = "Deskripsi tidak tersedia."
+
+                # -- AMBIL LINK GAMBAR UTAMA --
+                try:
+                    # Menggunakan ID mainImage yang ada di source code HTML
+                    link_gambar = page.locator('#mainImage').get_attribute('src')
+                except:
+                    link_gambar = "https://anekadropship.id/poto/anekamedia.jpeg"
+
+                # -- AMBIL SPESIFIKASI TAMBAHAN --
+                try:
+                    berat = page.locator("p").filter(has_text="Berat :").first.inner_text().replace('\n', ' ').strip()
+                except:
+                    berat = "Berat : -"
+                    
+                try:
+                    volume = page.locator("p").filter(has_text="Volume :").first.inner_text().replace('\n', ' ').strip()
+                except:
+                    volume = "Volume : -"
+                    
+                try:
+                    ekspedisi = page.locator("p").filter(has_text="Rekomendasi Ekspedisi :").first.inner_text().replace('\n', ' ').strip()
+                except:
+                    ekspedisi = "Rekomendasi Ekspedisi : -"
+                    
+                try:
+                    sistem = page.locator("p").filter(has_text="Sistem :").first.inner_text().replace('\n', ' ').strip()
+                except:
+                    sistem = "Sistem : -"
+
+                # -- GABUNGKAN DESKRIPSI & SPESIFIKASI --
+                deskripsi_lengkap = f"{deskripsi_utama}\n\nSpesifikasi:\n- {berat}\n- {volume}\n- {ekspedisi}\n- {sistem}"
+
+                print("  -> Detail berhasil ditarik!")
+
+            except Exception as e:
+                print(f"  -> (Detail gagal ditarik: {e})")
+                deskripsi_lengkap = "Produk dropship berkualitas siap kirim."
+                link_gambar = "https://anekadropship.id/poto/anekamedia.jpeg"
+
             # =================================================================
-            # 4. TULIS DATA KE DALAM BARIS CSV (Sudah diisi dengan benar!)
+            # 4. TULIS DATA KE DALAM BARIS CSV (Sesuai dengan header Meta Ads)
             # =================================================================
-            writer.writerow()
+            writer.writerow([id_produk, judul, deskripsi_lengkap, "in stock", "new", harga_meta, url, link_gambar, "Toko Dropshipku"])
 
-            # 5. Masukkan data yang sama ke dalam struktur JSON
-            data_detail_json.append({
-                "id": id_produk,
-                "title": judul,
-                "description": deskripsi,
-                "availability": "in stock",
-                "condition": "new",
-                "price": harga_meta,
-                "link": url,
-                "image_link": link_gambar,
-                "brand": "Toko Saya"
-            })
+            # Jeda 2 detik antar produk agar server Anekadropship tidak down
+            time.sleep(2)
 
-            # JEDA ACAK (SANGAT KRUSIAL agar tidak diblokir sistem)
-            jeda = random.uniform(4, 8)
-            print(f"  -> Selesai! Jeda {jeda:.2f} detik sebelum lanjut...\n")
-            time.sleep(jeda)
-
-        # Tutup browser dan file CSV
         browser.close()
-        file_csv.close()
-
-        # 6. Simpan hasil list JSON ke dalam file baru
-        with open("katalog_detail.json", "w", encoding="utf-8") as f_json:
-            json.dump(data_detail_json, f_json, indent=4, ensure_ascii=False)
-
-        print("SEMUA PROSES SELESAI!")
-        print("1. Data untuk Meta Ads tersimpan di: katalog_meta_ads.csv")
-        print("2. Data cadangan JSON tersimpan di: katalog_detail.json")
+    
+    csv_file.close()
+    print("\n🎉 Proses Scraping Selesai! Data berhasil disimpan di 'katalog_meta_ads.csv'")
 
 if __name__ == "__main__":
     scrape_detail_massal()
