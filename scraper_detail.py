@@ -162,8 +162,9 @@ def scrape_detail_massal():
                                 .inner_text(timeout=3000)
                                 .strip()
                             )
+                            return result if result else None 
                         except Exception:
-                            return "-"
+                            return None
 
                     # 4. Harga rekomendasi dari halaman web (lebih akurat)
                     raw_rekomendasi = get_strong_text("Rekomendasi Harga Jual :")

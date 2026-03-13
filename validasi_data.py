@@ -77,7 +77,7 @@ def validasi():
     no_desc    = [p for p in produk_list if not p.get('description') or p['description'] == 'Deskripsi tidak tersedia.']
     no_img     = [p for p in produk_list if 'anekamedia.jpeg' in p.get('image_link', '')]
     no_brand   = [p for p in produk_list if p.get('brand', 'LAINNYA') == 'LAINNYA']
-    no_berat   = [p for p in produk_list if p.get('specs', {}).get('berat', '-') == '-']
+    no_berat = [p for p in produk_list if p.get('specs', {}).get('berat') is None]
 
     def tampil_field(label, items):
         icon = "⚠️ " if items else "✅"
