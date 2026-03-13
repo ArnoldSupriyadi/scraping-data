@@ -90,22 +90,29 @@ def scrape_detail_massal():
                             return page.locator(f"p:has-text('{label_name}')").locator("strong").inner_text(timeout=3000).strip()
                         except: return "-"
 
+                    # Ambil harga rekomendasi dari teks web (Contoh: "Rp. 140.000")
+                    raw_rekomendasi = get_strong_text("Rekomendasi Harga Jual :")
+                    # Bersihkan jadi angka saja (140000)
+                    harga_rekomendasi_bersih = str(raw_rekomendasi).replace("Rp.", "").replace("Rp", "").replace(".", "").replace(",", "").strip()
+
                     data_final = {
-                        "id_produk": f"AD-{index+1}",
-                        "title": judul,
-                        "price": int(harga_bersih) if harga_bersih.isdigit() else 0,
-                        "currency": "IDR",
-                        "link": url,
-                        "image_link": link_gambar,
-                        "description": deskripsi_utama,
-                        "specs": {
-                            "berat": get_strong_text("Berat :"),
-                            "volume": get_strong_text("Volume :"),
-                            "ekspedisi": get_strong_text("Rekomendasi Ekspedisi :"),
-                            "sistem": get_strong_text("Sistem :")
-                        },
-                        "scraped_at": time.strftime("%Y-%m-%d %H:%M:%S")
-                    }
+                    "id_produk": f"AD-{index+1}",
+                    "title": judul,
+                    "price_modal": int(harga_bersih) if harga_bersih.isdigit() else 0, # Harga dari hasil_home
+                    "price_recommendation": int(harga_rekomendasi_bersih) if harga_rekomendasi_bersih.isdigit() else 0, # Harga dari detail web
+                    "currency": "IDR",
+                    "link": url,
+                    "image_link": link_gambar,
+                    "description": deskripsi_utama,
+                    "specs": {
+                        "berat": get_strong_text("Berat :"),
+                        "volume": get_strong_text("Volume :"),
+                        "ekspedisi": get_strong_text("Rekomendasi Ekspedisi :"),
+                        "sistem": get_strong_text("Sistem :"),
+                        "harga_rekomendasi_raw": raw_rekomendasi # Versi teks asli Rp. xxx
+                    },
+                    "scraped_at": time.strftime("%Y-%m-%d %H:%M:%S")
+                }
 
                     # Simpan data
                     with open(json_file_path, 'a', encoding='utf-8') as f:
