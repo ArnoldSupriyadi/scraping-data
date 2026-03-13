@@ -19,9 +19,14 @@ def ekstrak_brand_dan_kategori(judul: str):
         "HERBALUNA":  "Kesehatan & Herbal",
         "SERBAINDO":  "Kesehatan & Herbal",
         "BIOZARIA":   "Kesehatan & Herbal",
+        "MADU OCEAN": "Kesehatan & Herbal",
+        "BRAVINA":    "Kesehatan & Herbal",
+        "SLIMPLUS":   "Kesehatan & Herbal",
+        "ZENSIUM":    "Kesehatan & Herbal",
         "BATIK":      "Fashion Pria",
         "SRK":        "Fashion Muslim",
         "SKL":        "Sepatu & Sandal",
+        "DANTE":      "Sepatu & Sandal",
         "TAS":        "Tas & Aksesoris",
         "CHELSEA":    "Fashion Anak",
         "DR A":       "Fashion Anak",
@@ -32,6 +37,11 @@ def ekstrak_brand_dan_kategori(judul: str):
         "INDORAYA":   "Kesehatan Pria",
         "R46":        "Perawatan Kendaraan",
         "BROAZMI":    "Perawatan Kendaraan",
+        "BA":         "Perawatan Kendaraan",
+        "ESSEN":      "Perlengkapan Mancing",
+        "BOOM":       "Perlengkapan Mancing",
+        "AMBYAR":     "Perawatan Rumah",
+        "PAKET BUNDLE GET 5": "Perawatan Rumah",
     }
 
     # Cek partial match juga (misal "Pak Arief" vs "PAK ARIEF")
