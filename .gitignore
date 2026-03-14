@@ -1,4 +1,12 @@
+<<<<<<< HEAD
 .env
 __pycache__/
+=======
+venv/
+env/
+.env
+__pycache__/
+*.pyc
+>>>>>>> 8fb10666bd4e62874ad1db2fd50a8d7977209051
 *.json
 *.jsonl
