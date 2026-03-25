@@ -44,7 +44,7 @@ DATA_FILES = {
     "suppliers":         BASE_DIR / "suppliers.json",
     "supplier_products": BASE_DIR / "supplier_products.json",
     "supplier_couriers": BASE_DIR / "supplier_couriers.json",
-    "products":          BASE_DIR / "katalog_produk_final.jsonl",
+    "products":          BASE_DIR / "katalog_produk.jsonl",
 }
 
 # Urutan upload wajib dijaga (FK dependency)
@@ -136,6 +136,9 @@ def build_payload(tabel: str, row: dict) -> dict:
             "currency":             row.get("currency", "IDR"),
             "link":                 row.get("link"),
             "image_link":           bersihkan_null(row.get("image_link")),
+             "images":               row.get("images") or [],           # ✅ BARU
+            "marketing_kit_url":    bersihkan_null(row.get("marketing_kit_url")),  # ✅ BARU
+            "landing_page_url":     bersihkan_null(row.get("landing_page_url")),   # ✅ BARU
             "description":          bersihkan_null(row.get("description")),
             "specs": {
                 "berat":                 bersihkan_null(specs_raw.get("berat")),
